@@ -1,4 +1,8 @@
-# Payload Multi-Tenant Example
+# Payload Multi-Tenant Example with Postgres
+
+This is a fork of the official [multi-tenant example using mongodb](https://github.com/payloadcms/payload/tree/main/examples/multi-tenant).
+
+> The modifications I made can be found in the `Modifications.md` file.
 
 This example demonstrates how to achieve a multi-tenancy in [Payload](https://github.com/payloadcms/payload). Tenants are separated by a `Tenants` collection.
 
@@ -11,11 +15,11 @@ To spin up this example locally, follow these steps:
 - `npx create-payload-app --example multi-tenant`
 
 2. `cp .env.example .env` to copy the example environment variables
-
-3. `pnpm dev`, `yarn dev` or `npm run dev` to start the server
+3. `pnpm run payload migration:create` (This step is not in the official example repo, but when using postgres, it somehow tries to seed the db before the tables are created. This fixes it.)
+4. `pnpm dev`, `yarn dev` or `npm run dev` to start the server
    - Press `y` when prompted to seed the database
-4. `open http://localhost:3000` to access the home page
-5. `open http://localhost:3000/admin` to access the admin panel
+5. `open http://localhost:3000` to access the home page
+6. `open http://localhost:3000/admin` to access the admin panel
 
 ### Default users
 

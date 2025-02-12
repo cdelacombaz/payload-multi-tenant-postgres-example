@@ -16,7 +16,7 @@
     "start": "cross-env NODE_OPTIONS=--no-deprecation next start"
   },
   "dependencies": {
-    "@payloadcms/db-mongodb": "latest",
+    "@payloadcms/db-postgres": "^3.23.0",
     "@payloadcms/next": "latest",
     "@payloadcms/plugin-multi-tenant": "latest",
     "@payloadcms/richtext-lexical": "latest",

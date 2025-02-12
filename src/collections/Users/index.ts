@@ -1,31 +1,35 @@
-import type { CollectionConfig } from 'payload'
+import type { CollectionConfig } from "payload";
 
-import { createAccess } from './access/create'
-import { readAccess } from './access/read'
-import { updateAndDeleteAccess } from './access/updateAndDelete'
-import { externalUsersLogin } from './endpoints/externalUsersLogin'
-import { ensureUniqueUsername } from './hooks/ensureUniqueUsername'
-import { isSuperAdmin } from '@/access/isSuperAdmin'
-import { setCookieBasedOnDomain } from './hooks/setCookieBasedOnDomain'
-import { tenantsArrayField } from '@payloadcms/plugin-multi-tenant/fields'
+import { createAccess } from "./access/create";
+import { readAccess } from "./access/read";
+import { updateAndDeleteAccess } from "./access/updateAndDelete";
+import { externalUsersLogin } from "./endpoints/externalUsersLogin";
+import { ensureUniqueUsername } from "./hooks/ensureUniqueUsername";
+import { isSuperAdmin } from "@/access/isSuperAdmin";
+import { setCookieBasedOnDomain } from "./hooks/setCookieBasedOnDomain";
+import { tenantsArrayField } from "@payloadcms/plugin-multi-tenant/fields";
+import { Tenants } from "../Tenants";
 
 const defaultTenantArrayField = tenantsArrayField({
   arrayFieldAccess: {},
   tenantFieldAccess: {},
+  tenantsArrayFieldName: "tenants",
+  tenantsArrayTenantFieldName: "tenant", // field name which will result in tenant_id on related tables like User
+  tenantsCollectionSlug: Tenants.slug,
   rowFields: [
     {
-      name: 'roles',
-      type: 'select',
-      defaultValue: ['tenant-viewer'],
+      name: "roles",
+      type: "select",
+      defaultValue: ["tenant-viewer"],
       hasMany: true,
-      options: ['tenant-admin', 'tenant-viewer'],
+      options: ["tenant-admin", "tenant-viewer"],
       required: true,
     },
   ],
-})
+});
 
 const Users: CollectionConfig = {
-  slug: 'users',
+  slug: "users",
   access: {
     create: createAccess,
     delete: updateAndDeleteAccess,
@@ -33,39 +37,36 @@ const Users: CollectionConfig = {
     update: updateAndDeleteAccess,
   },
   admin: {
-    useAsTitle: 'email',
+    useAsTitle: "email",
   },
   auth: true,
   endpoints: [externalUsersLogin],
   fields: [
     {
       admin: {
-        position: 'sidebar',
+        position: "sidebar",
       },
-      name: 'roles',
-      type: 'select',
-      defaultValue: ['user'],
+      name: "roles",
+      type: "select",
+      defaultValue: ["user"],
       hasMany: true,
-      options: ['super-admin', 'user'],
+      options: ["super-admin", "user"],
       access: {
         update: ({ req }) => {
-          return isSuperAdmin(req.user)
+          return isSuperAdmin(req.user);
         },
       },
     },
     {
-      name: 'username',
-      type: 'text',
-      hooks: {
-        beforeValidate: [ensureUniqueUsername],
-      },
+      name: "username",
+      type: "text",
       index: true,
     },
     {
       ...defaultTenantArrayField,
       admin: {
         ...(defaultTenantArrayField?.admin || {}),
-        position: 'sidebar',
+        position: "sidebar",
       },
     },
   ],
@@ -75,7 +76,8 @@ const Users: CollectionConfig = {
 
   hooks: {
     afterLogin: [setCookieBasedOnDomain],
+    beforeValidate: [ensureUniqueUsername],
   },
-}
+};
 
-export default Users
+export default Users;

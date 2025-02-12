@@ -1,67 +1,77 @@
-import type { FieldHook } from 'payload'
+import type { CollectionBeforeValidateHook } from "payload";
+import { ValidationError } from "payload";
+import { User } from "@/payload-types";
 
-import { ValidationError } from 'payload'
+export const ensureUniqueUsername: CollectionBeforeValidateHook<User> = async ({
+  data,
+  originalDoc,
+  req,
+}) => {
+  const username = data?.username;
 
-import { getUserTenantIDs } from '../../../utilities/getUserTenantIDs'
-
-export const ensureUniqueUsername: FieldHook = async ({ data, originalDoc, req, value }) => {
-  // if value is unchanged, skip validation
-  if (originalDoc.username === value) {
-    return value
+  // Skip validation if username is not being set/changed and tenants aren't being modified
+  if (
+    (!username && !data?.tenants) ||
+    (originalDoc?.username === username && !data?.tenants)
+  ) {
+    return data;
   }
 
-  const incomingTenantID = typeof data?.tenant === 'object' ? data.tenant.id : data?.tenant
-  const currentTenantID =
-    typeof originalDoc?.tenant === 'object' ? originalDoc.tenant.id : originalDoc?.tenant
-  const tenantIDToMatch = incomingTenantID || currentTenantID
+  // Get incoming tenant IDs from the data
+  const incomingTenantIDs =
+    data?.tenants?.map((t) =>
+      typeof t.tenant === "object" ? t.tenant.id : t.tenant
+    ) || [];
 
-  const findDuplicateUsers = await req.payload.find({
-    collection: 'users',
-    where: {
-      and: [
-        {
-          'tenants.tenant': {
-            equals: tenantIDToMatch,
+  // Get current tenant IDs from the original doc
+  const currentTenantIDs =
+    originalDoc?.tenants?.map((t) =>
+      typeof t.tenant === "object" ? t.tenant.id : t.tenant
+    ) || [];
+
+  // Combine all tenant IDs we need to check against
+  const tenantsToCheck = [
+    ...new Set([...incomingTenantIDs, ...currentTenantIDs]),
+  ];
+
+  if (tenantsToCheck.length > 0) {
+    const findDuplicateUsers = await req.payload.find({
+      collection: "users",
+      where: {
+        and: [
+          {
+            "tenants.tenant": {
+              in: tenantsToCheck,
+            },
           },
-        },
-        {
-          username: {
-            equals: value,
+          {
+            username: {
+              equals: username,
+            },
           },
-        },
-      ],
-    },
-  })
+          // Exclude the current user if this is an update
+          originalDoc?.id
+            ? {
+                id: {
+                  not_equals: originalDoc.id,
+                },
+              }
+            : {},
+        ],
+      },
+    });
 
-  if (findDuplicateUsers.docs.length > 0 && req.user) {
-    const tenantIDs = getUserTenantIDs(req.user)
-    // if the user is an admin or has access to more than 1 tenant
-    // provide a more specific error message
-    if (req.user.roles?.includes('super-admin') || tenantIDs.length > 1) {
-      const attemptedTenantChange = await req.payload.findByID({
-        id: tenantIDToMatch,
-        collection: 'tenants',
-      })
-
+    if (findDuplicateUsers.docs.length > 0) {
       throw new ValidationError({
         errors: [
           {
-            message: `The "${attemptedTenantChange.name}" tenant already has a user with the username "${value}". Usernames must be unique per tenant.`,
-            path: 'username',
+            message: `The username "${username}" is already in use by another user.`,
+            path: "username",
           },
         ],
-      })
+      });
     }
-
-    throw new ValidationError({
-      errors: [
-        {
-          message: `A user with the username ${value} already exists. Usernames must be unique per tenant.`,
-          path: 'username',
-        },
-      ],
-    })
   }
 
-  return value
-}
+  return data;
+};

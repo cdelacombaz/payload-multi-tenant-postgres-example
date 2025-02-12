@@ -1,40 +1,43 @@
-import type { User } from '@/payload-types'
-import type { Access, Where } from 'payload'
+import type { User } from "@/payload-types";
+import type { Access, Where } from "payload";
 
-import { parseCookies } from 'payload'
+import { parseCookies } from "payload";
 
-import { isSuperAdmin } from '../../../access/isSuperAdmin'
-import { getUserTenantIDs } from '../../../utilities/getUserTenantIDs'
-import { isAccessingSelf } from './isAccessingSelf'
+import { isSuperAdmin } from "../../../access/isSuperAdmin";
+import { getUserTenantIDs } from "../../../utilities/getUserTenantIDs";
+import { isAccessingSelf } from "./isAccessingSelf";
 
 export const readAccess: Access<User> = ({ req, id }) => {
   if (!req?.user) {
-    return false
+    return false;
   }
 
   if (isAccessingSelf({ id, user: req.user })) {
-    return true
+    return true;
   }
 
-  const cookies = parseCookies(req.headers)
-  const superAdmin = isSuperAdmin(req.user)
-  const selectedTenant = cookies.get('payload-tenant')
-  const adminTenantAccessIDs = getUserTenantIDs(req.user, 'tenant-admin')
+  const cookies = parseCookies(req.headers);
+  const superAdmin = isSuperAdmin(req.user);
+  const selectedTenant = cookies.get("payload-tenant");
+  const adminTenantAccessIDs = getUserTenantIDs(req.user, "tenant-admin");
+  const selectedTenantId = Number(selectedTenant) ?? undefined;
 
-  if (selectedTenant) {
+  if (selectedTenantId) {
     // If it's a super admin, or they have access to the tenant ID set in cookie
-    const hasTenantAccess = adminTenantAccessIDs.some((id) => id === selectedTenant)
+    const hasTenantAccess = adminTenantAccessIDs.some(
+      (id) => id === selectedTenantId
+    );
     if (superAdmin || hasTenantAccess) {
       return {
-        'tenants.tenant': {
-          equals: selectedTenant,
+        "tenants.tenant": {
+          equals: selectedTenantId,
         },
-      }
+      };
     }
   }
 
   if (superAdmin) {
-    return true
+    return true;
   }
 
   return {
@@ -45,10 +48,10 @@ export const readAccess: Access<User> = ({ req, id }) => {
         },
       },
       {
-        'tenants.tenant': {
+        "tenants.tenant": {
           in: adminTenantAccessIDs,
         },
       },
     ],
-  } as Where
-}
+  } as Where;
+};

@@ -1,6 +1,6 @@
-import type { Access } from 'payload'
+import type { Access } from "payload";
 
-import { isSuperAdmin } from '../../../access/isSuperAdmin'
+import { isSuperAdmin } from "../../../access/isSuperAdmin";
 
 export const filterByTenantRead: Access = (args) => {
   // Allow public tenants to be read by anyone
@@ -9,19 +9,19 @@ export const filterByTenantRead: Access = (args) => {
       allowPublicRead: {
         equals: true,
       },
-    }
+    };
   }
 
-  return true
-}
+  return true;
+};
 
 export const canMutateTenant: Access = ({ req }) => {
   if (!req.user) {
-    return false
+    return false;
   }
 
   if (isSuperAdmin(req.user)) {
-    return true
+    return true;
   }
 
   return {
@@ -29,11 +29,11 @@ export const canMutateTenant: Access = ({ req }) => {
       in:
         req.user?.tenants
           ?.map(({ roles, tenant }) =>
-            roles?.includes('tenant-admin')
-              ? tenant && (typeof tenant === 'string' ? tenant : tenant.id)
-              : null,
+            roles?.includes("tenant-admin")
+              ? tenant && (typeof tenant === "string" ? tenant : tenant.id)
+              : null
           )
           .filter(Boolean) || [],
     },
-  }
-}
+  };
+};
