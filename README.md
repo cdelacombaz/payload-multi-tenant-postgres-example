@@ -15,7 +15,7 @@ To spin up this example locally, follow these steps:
 - `npx create-payload-app --example multi-tenant`
 
 2. `cp .env.example .env` to copy the example environment variables
-3. `pnpm run payload migration:create` (This step is not in the official example repo, but when using postgres, it somehow tries to seed the db before the tables are created. This fixes it.)
+3. `pnpm run payload migrate:create` (This step is not in the official example repo, but when using postgres, it somehow tries to seed the db before the tables are created. This fixes it.)
 4. `pnpm dev`, `yarn dev` or `npm run dev` to start the server
    - Press `y` when prompted to seed the database
 5. `open http://localhost:3000` to access the home page
